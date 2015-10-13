@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="proxemics" type="proxemics_controller" name="proxemics_controller"/>
+  <!--<node pkg="proxemics" type="proxemics_goal_state_estimation" name="proxemics_goal_state_estimation"/>-->
+</launch>
+

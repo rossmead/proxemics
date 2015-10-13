@@ -1,0 +1,17 @@
+<launch>
+  <param name="use_sim_time" value="true" type="bool"/>
+  <node pkg="stage_ros" type="stageros" name="world" args="$(find proxemics)/worlds/empty.world">
+    <remap from="/robot_0/cmd_vel" to="/robot/cmd_vel"/>
+    <remap from="/robot_1/cmd_vel" to="/human/cmd_vel"/>
+  </node>
+
+  # TF static transforms (Stage)
+  # Note: poses should match the settings in the .world file
+  <node pkg="tf" type="static_transform_publisher" name="robot_odom" args="1 0 0 3.14159265359 0 0 /map /robot_0/odom 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="human_odom" args="-1 0 0 0 0 0 /map /robot_1/odom 100"/>
+
+  # TF static transforms (proxemics)
+  <node pkg="tf" type="static_transform_publisher" name="robot_base_link" args="0 0 0 0 0 0 /robot_0/base_link /robot/base_link 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="human_base_link" args="0 0 0 0 0 0 /robot_1/base_link /human/base_link 100"/>
+</launch>
+
