@@ -207,13 +207,13 @@ namespace proxemics
     double ang_ab;     // orientation (radians) from A to B
     double ang_ba;     // orientation (radians) from B to A
     double spl_out_a;  // sound pressure level (SPL) output from A to B
-    double spl_out_b;  // sound pressure level (SPL) output from A to B
+    double spl_out_b;  // sound pressure level (SPL) output from B to A
     double spl_in_a;   // sound pressure level (SPL) input from B to A
-    double spl_in_b;   // sound pressure level (SPL) input from B to A
+    double spl_in_b;   // sound pressure level (SPL) input from A to B
     double loc_out_a;  // gesture locus (multivariate PDF) output from A to B
-    double loc_out_b;  // gesture locus (multivariate PDF) output from A to B
+    double loc_out_b;  // gesture locus (multivariate PDF) output from B to A
     double loc_in_a;   // gesture locus (multivariate PDF) input from B to A
-    double loc_in_b;   // gesture locus (multivariate PDF) input from B to A
+    double loc_in_b;   // gesture locus (multivariate PDF) input from A to B
     double spl_noise;  // auditory noise (SPL) from the environment
     double loc_noise;  // visual noise (gesture locus) from the environment
 

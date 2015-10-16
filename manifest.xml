@@ -9,6 +9,7 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/proxemics</url>
   <depend package="angles"/>
+  <depend package="dynamic_reconfigure"/>
   <depend package="pcl_conversions"/>
   <depend package="pcl_ros"/>
   <depend package="roscpp"/>

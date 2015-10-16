@@ -37,3 +37,8 @@ rosbuild_add_executable(proxemics_goal_state_estimation nodes/proxemics_goal_sta
 target_link_libraries(proxemics_goal_state_estimation ${gsl_LIBRARIES})
 target_link_libraries(proxemics_goal_state_estimation ${PCL_LIBRARIES})
 #target_link_libraries(example ${PROJECT_NAME})
+
+#add dynamic reconfigure API
+rosbuild_find_ros_package(dynamic_reconfigure)
+include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
+gencfg()
