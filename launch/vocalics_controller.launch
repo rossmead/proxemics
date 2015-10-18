@@ -1,0 +1,12 @@
+<launch>
+  <node pkg="proxemics" type="vocalics_controller" name="vocalics_controller" output="screen">
+    <param name="ambient_spl"         value="40.7"    type="double" />
+    <param name="spl_to_volume_beta0" value="62.908"  type="double" />
+    <param name="spl_to_volume_beta1" value="-2.567"  type="double" />
+    <param name="spl_to_volume_beta2" value="0.045"   type="double" />
+    <param name="volume_to_spl_beta0" value="20.786"  type="double" />
+    <param name="volume_to_spl_beta1" value="0.726"   type="double" />
+    <param name="volume_to_spl_beta2" value="-0.0025" type="double" />
+  </node>
+</launch>
+
