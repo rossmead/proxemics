@@ -19,6 +19,7 @@
 #include <tf/transform_listener.h>
 
 // ROS proxemics includes
+#include <proxemics/AudioNoise.h>
 #include <proxemics/ProxemicsGoalState.h>
 #include <proxemics/VocalicsGoalState.h>
 #include <proxemics/KinesicsGoalState.h>
@@ -125,6 +126,7 @@ double getGestureRecRateBeta( double dist, double beta,
 double getGestureRecRate( double dist, double alpha, double beta );
 
 // function prototypes: callbacks
+void cbAudioNoise(const proxemics::AudioNoise::ConstPtr &audio_noise);
 void cbCloud( const sensor_msgs::PointCloud2ConstPtr & input );
 
 // function prototypes: gesture output
@@ -451,6 +453,9 @@ proxemics::ProxemicsGoalState g_proxemics_goal_state;
 proxemics::VocalicsGoalState g_vocalics_goal_state;
 proxemics::KinesicsGoalState g_kinesics_goal_state;
 
+// global variables: audio noise
+double g_ambient_spl = 45.0;
+
 // executes main program code
 int main( int argc, char** argv )
 {
@@ -477,9 +482,12 @@ int main( int argc, char** argv )
   ros::Publisher pub_proxemics_goal_state = nh.advertise<proxemics::ProxemicsGoalState>( "proxemics_goal_state", 1 );
   ros::Publisher pub_vocalics_goal_state  = nh.advertise<proxemics::VocalicsGoalState>(  "vocalics_goal_state",  1 );
   ros::Publisher pub_kinesics_goal_state  = nh.advertise<proxemics::KinesicsGoalState>(  "kinesics_goal_state",  1 );
+  
+  // Create a ROS subscriber for the audio noise.
+  ros::Subscriber sub = nh.subscribe("audio_noise", 1, cbAudioNoise);
 
-  // load speech and gesture recognition tables
-  nh.param<std::string>("filepath", g_filepath, ros::package::getPath("proxemics"));
+  // Load speech and gesture recognition tables.
+  nh.param<std::string>("/proxemics_goal_state_estimation/filepath", g_filepath, ros::package::getPath("proxemics"));
   loadSpeechRecTables();
   loadGestureRecTables();
 
@@ -609,6 +617,12 @@ int main( int argc, char** argv )
   return 0;
 } // main( int, char** )
 
+// callback function: audio noise
+void cbAudioNoise(const proxemics::AudioNoise::ConstPtr &audio_noise)
+{
+  g_ambient_spl = audio_noise->sound_pressure_level;
+} // cbAudioNoise(const proxemics::AudioNoise::ConstPtr &)
+
 // callback function: point cloud
 void cbCloud( const sensor_msgs::PointCloud2ConstPtr & ros_cloud_in )
 { // ROSS: You changed the pcl::PointCloud/fromROSMsg to sensor_msgs::... Search for "toROSMsg" as well...
@@ -633,19 +647,19 @@ double evalParticle( pcl::PointXYZ particle )
 proxemics::ProxemicState getParticleAsProxemicState( pcl::PointXYZ particle )
 {
   proxemics::ProxemicState state;
+  state.spl_noise = g_ambient_spl; //proxemics::spl_noise;
+  state.loc_noise = proxemics::loc_noise;
   state.rng       = sqrt( pow( particle.x, 2 ) + pow( particle.y, 2 ) );  // assumes xy w.r.t. person!
   state.ang_ab    = proxemics::ang_ab_mean;
   state.ang_ba    = atan2( particle.y, particle.x );  // assumes xy w.r.t. person!
-  state.spl_out_a = calcSplOutA( state.rng, state.ang_ab, state.ang_ba, proxemics::spl_noise );
-  state.spl_out_b = calcSplOutB( state.rng, state.ang_ba, state.ang_ab, proxemics::spl_noise );
+  state.spl_out_a = calcSplOutA( state.rng, state.ang_ab, state.ang_ba, state.spl_noise );
+  state.spl_out_b = calcSplOutB( state.rng, state.ang_ba, state.ang_ab, state.spl_noise );
   state.spl_in_a  = calcSplInA( state.rng, state.ang_ba, state.ang_ab, state.spl_out_a );
   state.spl_in_b  = calcSplInB( state.rng, state.ang_ab, state.ang_ba, state.spl_out_b );
-  state.loc_out_a = calcLocOutA( state.rng, state.ang_ab, state.ang_ba, proxemics::loc_noise );
-  state.loc_out_b = calcLocOutA( state.rng, state.ang_ba, state.ang_ab, proxemics::loc_noise );
+  state.loc_out_a = calcLocOutA( state.rng, state.ang_ab, state.ang_ba, state.loc_noise );
+  state.loc_out_b = calcLocOutA( state.rng, state.ang_ba, state.ang_ab, state.loc_noise );
   state.loc_in_a  = calcLocInA( state.rng, state.ang_ba, state.ang_ab, state.loc_out_a );
   state.loc_in_b  = calcLocInA( state.rng, state.ang_ab, state.ang_ba, state.loc_out_b );
-  state.spl_noise = proxemics::spl_noise;
-  state.loc_noise = proxemics::loc_noise;
   return state;
 } // getParticleAsProxemicState( pcl::PointXYZ )
 
@@ -709,16 +723,16 @@ pcl::PointCloud<pcl::PointXYZ> updateParticles( pcl::PointCloud<pcl::PointXYZ> p
   //printf( "particle = %.2f, %.2f, %.2f\n", particle.x, particle.y, particle.z );
 
   printf( "---------------------------------------------------------------\n" );
-  printf( "rng = %.2f, ang_ab = %.0f, ang_ba = %.0f\n",
+  printf( "rng = %.2f, ang_ab = %.2f, ang_ba = %.2f\n",
           max_state.rng,
           angles::to_degrees( max_state.ang_ab ),
           angles::to_degrees( max_state.ang_ba ) );
-  printf( "spl_out_a = %.2f, spl_in_a = %.2f, loc_out_a = %.0f, loc_in_a = %.0f\n",
+  printf( "spl_out_a = %.2f, spl_in_a = %.2f, loc_out_a = %.2f, loc_in_a = %.2f\n",
           max_state.spl_out_a,
           max_state.spl_in_a,
           angles::to_degrees( max_state.loc_out_a ),
           angles::to_degrees( max_state.loc_in_a ) );
-  printf( "spl_out_b = %.2f, spl_in_b = %.2f, loc_out_b = %.0f, loc_in_b = %.0f\n",
+  printf( "spl_out_b = %.2f, spl_in_b = %.2f, loc_out_b = %.2f, loc_in_b = %.2f\n",
           max_state.spl_out_b,
           max_state.spl_in_b,
           angles::to_degrees( max_state.loc_out_b ),
@@ -734,7 +748,7 @@ pcl::PointCloud<pcl::PointXYZ> updateParticles( pcl::PointCloud<pcl::PointXYZ> p
     g_curr_range_robot_to_human, 
     g_curr_angle_robot_to_human, 
     g_curr_angle_human_to_robot,
-    proxemics::spl_noise );
+    g_ambient_spl );
   
   //g_kinesics_goal_state.range_max = 0.5 * max_state.rng;
   //g_kinesics_goal_state.angle     = max_state.ang_ab;
@@ -1043,12 +1057,24 @@ float getSpeechRecRate( TPerformance table[ DIRECTIVITY_NUM_PERF ][ HRTF_NUM_PER
   speaker_orientation  = angles::to_degrees( speaker_orientation );
   listener_orientation = angles::to_degrees( listener_orientation );
   speech_pressure     += getDistanceEffect( distance );
+  
+  // clip sound pressure value to those represented in the data collection
+  if ( speech_pressure < g_pressure_level_perf[ 0 ] )
+    speech_pressure = g_pressure_level_perf[ 0 ];
+  if ( speech_pressure > g_pressure_level_perf[ PRESSURE_NUM_PERF - 1 ] )
+    speech_pressure = g_pressure_level_perf[ PRESSURE_NUM_PERF - 1 ];
+  
+  // clip noise value to those represented in the data collection
+  if ( noise < g_noise_level_perf[ 0 ] )
+    noise = g_noise_level_perf[ 0 ];
+  if ( noise > g_noise_level_perf[ NOISE_NUM_PERF - 1 ] )
+    noise = g_noise_level_perf[ NOISE_NUM_PERF - 1 ];
 
   int idx_speech1   = 0, idx_speech2   = 0;
   int idx_noise1    = 0, idx_noise2    = 0;
   int idx_speaker1  = 0, idx_speaker2  = 0;
   int idx_listener1 = 0, idx_listener2 = 0;
-
+  
   // get all the index for interpolation
   getTwoSpeechIndeces( speech_pressure, g_pressure_level_perf, PRESSURE_NUM_PERF,
                       &idx_speech1, &idx_speech2 );

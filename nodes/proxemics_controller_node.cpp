@@ -64,23 +64,23 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
 
   // initialize parameters
-  nh.param<std::string>("robot_frame_id", g_robot_frame_id,            "/robot/base_link");
-  nh.param<std::string>("human_frame_id", g_human_frame_id,            "/human/base_link");
-  nh.param("goal_range_robot_to_human",   g_goal_range_robot_to_human, 1.5);
-  nh.param("goal_angle_robot_to_human",   g_goal_angle_robot_to_human, 0.0);
-  nh.param("goal_angle_human_to_robot",   g_goal_angle_human_to_robot, 0.0);
-  nh.param("min_speed_lin_x",             g_min_speed_lin_x,           0.0);
-  nh.param("max_speed_lin_x",             g_max_speed_lin_x,           1.0);
-  nh.param("min_speed_lin_y",             g_min_speed_lin_y,           0.0);
-  nh.param("max_speed_lin_y",             g_max_speed_lin_y,           1.0);
-  nh.param("min_speed_ang_z",             g_min_speed_ang_z,           0.0);  // note: parameter in degrees, but variable in radians!
-  nh.param("max_speed_ang_z",             g_max_speed_ang_z,          90.0);  // note: parameter in degrees, but variable in radians!
-  nh.param("gain_p_lin_x",                g_gain_p_lin_x,              1.0);
-  nh.param("gain_p_lin_y",                g_gain_p_lin_y,              1.0);
-  nh.param("gain_p_ang_z",                g_gain_p_ang_z,              1.0);
-  nh.param("gain_d_lin_x",                g_gain_d_lin_x,              0.0);
-  nh.param("gain_d_lin_y",                g_gain_d_lin_y,              0.0);
-  nh.param("gain_d_ang_z",                g_gain_d_ang_z,              0.0);
+  nh.param<std::string>("/proxemics_controller/robot_frame_id", g_robot_frame_id,            "/robot/base_link");
+  nh.param<std::string>("/proxemics_controller/human_frame_id", g_human_frame_id,            "/human/base_link");
+  nh.param("/proxemics_controller/goal_range_robot_to_human",   g_goal_range_robot_to_human, 1.5);
+  nh.param("/proxemics_controller/goal_angle_robot_to_human",   g_goal_angle_robot_to_human, 0.0);
+  nh.param("/proxemics_controller/goal_angle_human_to_robot",   g_goal_angle_human_to_robot, 0.0);
+  nh.param("/proxemics_controller/min_speed_lin_x",             g_min_speed_lin_x,           0.0);
+  nh.param("/proxemics_controller/max_speed_lin_x",             g_max_speed_lin_x,           1.0);
+  nh.param("/proxemics_controller/min_speed_lin_y",             g_min_speed_lin_y,           0.0);
+  nh.param("/proxemics_controller/max_speed_lin_y",             g_max_speed_lin_y,           1.0);
+  nh.param("/proxemics_controller/min_speed_ang_z",             g_min_speed_ang_z,           0.0);  // note: parameter in degrees, but variable in radians!
+  nh.param("/proxemics_controller/max_speed_ang_z",             g_max_speed_ang_z,          90.0);  // note: parameter in degrees, but variable in radians!
+  nh.param("/proxemics_controller/gain_p_lin_x",                g_gain_p_lin_x,              1.0);
+  nh.param("/proxemics_controller/gain_p_lin_y",                g_gain_p_lin_y,              1.0);
+  nh.param("/proxemics_controller/gain_p_ang_z",                g_gain_p_ang_z,              1.0);
+  nh.param("/proxemics_controller/gain_d_lin_x",                g_gain_d_lin_x,              0.0);
+  nh.param("/proxemics_controller/gain_d_lin_y",                g_gain_d_lin_y,              0.0);
+  nh.param("/proxemics_controller/gain_d_ang_z",                g_gain_d_ang_z,              0.0);
   g_min_speed_ang_z = angles::from_degrees(g_min_speed_ang_z);
   g_max_speed_ang_z = angles::from_degrees(g_max_speed_ang_z);
 

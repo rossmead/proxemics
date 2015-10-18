@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="proxemics" type="audio_noise_recognizer" name="audio_noise_recognizer" output="screen">
+    <param name="sound_pressure_level" value="40.7" type="double" />
+  </node>
+</launch>
+
