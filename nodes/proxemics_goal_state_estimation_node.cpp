@@ -14,6 +14,7 @@
 #include <gsl/gsl_randist.h>
 
 // ROS includes
+#include <ros/package.h>  // for finding the filepath to the package
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 
@@ -37,10 +38,13 @@
 #include <angles/angles.h>
 
 // definitions: speaker input
-#define MODEL_L ( "./models/orientation_left.txt" )
-#define MODEL_R ( "./models/orientation_right.txt" )
+#define MODEL_L ( "/models/orientation_left.txt" )
+#define MODEL_R ( "/models/orientation_right.txt" )
 #define HRTF_NUM   ( 13 )
 #define DIRECT_NUM ( 13 )
+
+// global variables: filepath (for models directory)
+std::string g_filepath = ".";
 
 // global variables: speaker input models
 float g_model_data_l[ DIRECT_NUM ][ HRTF_NUM ];
@@ -49,7 +53,7 @@ int   g_hrtf[ HRTF_NUM ]          = { 0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 
 int   g_directivity[ DIRECT_NUM ] = { 0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180 };
 
 // definitions: speech recognition rates
-#define DATA_DIR_PERF        ( "./models/speech" )
+#define DATA_DIR_PERF        ( "/models/speech" )
 #define HRTF_NUM_PERF        ( 7 )
 #define DIRECTIVITY_NUM_PERF ( 7 )
 #define PRESSURE_NUM_PERF    ( 7 )
@@ -62,7 +66,7 @@ int g_pressure_level_perf[ PRESSURE_NUM_PERF ] = { 42, 48, 54, 60,  66,  72,  78
 int g_noise_level_perf[ NOISE_NUM_PERF ]       = { 42, 48, 54, 60,  66,  72,  78 };
 
 // definitions: gesture recognition rates
-#define PROBABILITY_FOLDER_GESTURE "./models/gesture"
+#define PROBABILITY_FOLDER_GESTURE "/models/gesture"
 #define BETA_NUM_GESTURE ( 7 )
 #define D_NUM_GESTURE    ( 6 )
 
@@ -475,6 +479,7 @@ int main( int argc, char** argv )
   ros::Publisher pub_kinesics_goal_state  = nh.advertise<proxemics::KinesicsGoalState>( "kinesics_goal_state", 1 );
 
   // load speech and gesture recognition tables
+  nh.param<std::string>("filepath", g_filepath, ros::package::getPath("proxemics"));
   loadSpeechRecTables();
   loadGestureRecTables();
 
@@ -956,8 +961,10 @@ int findIndex( double data, int index_array[], int array_length )
 
 void loadModel()
 {
-  FILE* file_l = fopen( MODEL_L, "r" );
-  FILE* file_r = fopen( MODEL_R, "r" );
+  std::string filepath_model_l = g_filepath + MODEL_L;
+  std::string filepath_model_r = g_filepath + MODEL_R;
+  FILE* file_l = fopen( filepath_model_l.c_str(), "r" );
+  FILE* file_r = fopen( filepath_model_l.c_str(), "r" );
   for ( int idx_direct = 0; idx_direct < DIRECT_NUM; ++idx_direct )
     for ( int idx_hrtf = 0; idx_hrtf < HRTF_NUM; ++idx_hrtf )
     {
@@ -969,16 +976,18 @@ void loadModel()
 // load the performance look-up table for each ear
 void loadSpeechRecTables()
 {
-  char  file_path_l[ 256 ];
-  char  file_path_r[ 256 ];
+  std::string filepath_data_dir_perf = g_filepath + DATA_DIR_PERF;
+  
+  char  file_path_l[ 512 ];
+  char  file_path_r[ 512 ];
 
   for ( int directivity_index = 0; directivity_index < DIRECTIVITY_NUM_PERF; ++directivity_index )
   {
     for (int hrtf_index = 0; hrtf_index < HRTF_NUM_PERF; ++hrtf_index )
     {
-      sprintf( file_path_l, "%s/l_ear/speaker_%d_listener_%d.txt", DATA_DIR_PERF,
+      sprintf( file_path_l, "%s/l_ear/speaker_%d_listener_%d.txt", filepath_data_dir_perf.c_str(),
                g_directivity_perf[ directivity_index ], g_hrtf_perf[ hrtf_index ] );
-      sprintf( file_path_r, "%s/r_ear/speaker_%d_listener_%d.txt", DATA_DIR_PERF,
+      sprintf( file_path_r, "%s/r_ear/speaker_%d_listener_%d.txt", filepath_data_dir_perf.c_str(),
                g_directivity_perf[ directivity_index ], g_hrtf_perf[ hrtf_index ] );
       FILE* file_l = fopen( file_path_l, "r" );  // note: check for open!!!
       FILE* file_r = fopen( file_path_r, "r" );  // note: check for open!!!
@@ -1094,15 +1103,31 @@ float getSpeechRecRate( TPerformance table[ DIRECTIVITY_NUM_PERF ][ HRTF_NUM_PER
 // load all the table
 void loadGestureRecTables()
 {
+  std::string filepath_probability_folder_gesture = g_filepath + PROBABILITY_FOLDER_GESTURE;
+  std::string filepath_head_dist  = filepath_probability_folder_gesture + "/head_dist.txt";
+  std::string filepath_head_beta  = filepath_probability_folder_gesture + "/head_beta.txt";
+  std::string filepath_left_dist  = filepath_probability_folder_gesture + "/l_hand_dist.txt";
+  std::string filepath_left_beta  = filepath_probability_folder_gesture + "/l_hand_beta.txt";
+  std::string filepath_right_dist = filepath_probability_folder_gesture + "/r_hand_dist.txt";
+  std::string filepath_right_beta = filepath_probability_folder_gesture + "/r_hand_beta.txt";
 
   // open all the files
   // note: this is VERY bad style for filenames
-  FILE* head_dist  = fopen( PROBABILITY_FOLDER_GESTURE "/head_dist.txt", "r" );
-  FILE* head_beta  = fopen( PROBABILITY_FOLDER_GESTURE "/head_beta.txt", "r" );
-  FILE* left_dist  = fopen( PROBABILITY_FOLDER_GESTURE "/l_hand_dist.txt", "r" );
-  FILE* left_beta  = fopen( PROBABILITY_FOLDER_GESTURE "/l_hand_beta.txt", "r" );
-  FILE* right_dist = fopen( PROBABILITY_FOLDER_GESTURE "/r_hand_dist.txt", "r" );
-  FILE* right_beta = fopen( PROBABILITY_FOLDER_GESTURE "/r_hand_beta.txt", "r" );
+  FILE* head_dist  = fopen( filepath_head_dist.c_str(),  "r" );
+  FILE* head_beta  = fopen( filepath_head_beta.c_str(),  "r" );
+  FILE* left_dist  = fopen( filepath_left_dist.c_str(),  "r" );
+  FILE* left_beta  = fopen( filepath_left_beta.c_str(),  "r" );
+  FILE* right_dist = fopen( filepath_right_dist.c_str(), "r" );
+  FILE* right_beta = fopen( filepath_right_beta.c_str(), "r" );
+
+  // open all the files
+  // note: this is VERY bad style for filenames
+  //FILE* head_dist  = fopen( PROBABILITY_FOLDER_GESTURE "/head_dist.txt", "r" );
+  //FILE* head_beta  = fopen( PROBABILITY_FOLDER_GESTURE "/head_beta.txt", "r" );
+  //FILE* left_dist  = fopen( PROBABILITY_FOLDER_GESTURE "/l_hand_dist.txt", "r" );
+  //FILE* left_beta  = fopen( PROBABILITY_FOLDER_GESTURE "/l_hand_beta.txt", "r" );
+  //FILE* right_dist = fopen( PROBABILITY_FOLDER_GESTURE "/r_hand_dist.txt", "r" );
+  //FILE* right_beta = fopen( PROBABILITY_FOLDER_GESTURE "/r_hand_beta.txt", "r" );
 
   // load the distance probability
   for ( int i = 0; i < D_NUM_GESTURE; ++i )
