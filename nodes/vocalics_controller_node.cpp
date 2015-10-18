@@ -165,7 +165,6 @@ struct SoundMixer
 // global variables
 bool   g_set_volume          = true;
 double g_volume              = 0.0;
-double g_ambient_spl         = 0.0;
 double g_spl_to_volume_beta0 = 0.0;
 double g_spl_to_volume_beta1 = 0.0;
 double g_spl_to_volume_beta2 = 0.0;
@@ -212,7 +211,6 @@ int main(int argc, char** argv)
   srv_reconfig.setCallback(cb_reconfig);
   
   // initiatlize parameters
-  nh.param("ambient_spl",         g_ambient_spl,        40.0);
   nh.param("spl_to_volume_beta0", g_spl_to_volume_beta0, 0.0);
   nh.param("spl_to_volume_beta1", g_spl_to_volume_beta1, 0.0);
   nh.param("spl_to_volume_beta2", g_spl_to_volume_beta2, 0.0);
@@ -260,7 +258,6 @@ void cbVocalicsGoalState(const proxemics::VocalicsGoalState::ConstPtr &vocalics_
 void cbReconfigure(proxemics::VocalicsControllerConfig &config, uint32_t level)
 {
   g_volume              = config.volume;
-  g_ambient_spl         = config.ambient_spl;
   g_spl_to_volume_beta0 = config.spl_to_volume_beta0;
   g_spl_to_volume_beta1 = config.spl_to_volume_beta1;
   g_spl_to_volume_beta2 = config.spl_to_volume_beta2;
@@ -288,6 +285,5 @@ double convertVolumeToSpl(double volume)
   double spl = g_volume_to_spl_beta2 * pow(volume, 2) 
              + g_volume_to_spl_beta1 * volume 
              + g_volume_to_spl_beta0;
-  //if (spl < g_ambient_spl) spl = g_ambient_spl;
   return spl;
 } // convertVolumeToSpl(double)

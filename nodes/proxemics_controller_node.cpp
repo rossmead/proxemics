@@ -85,7 +85,7 @@ int main(int argc, char** argv)
   g_max_speed_ang_z = angles::from_degrees(g_max_speed_ang_z);
 
   // initialize dynamic reconfigure parameter server
-  dynamic_reconfigure::Server<proxemics::ProxemicsControllerConfig> srv_reconfig;
+  dynamic_reconfigure::Server<proxemics::ProxemicsControllerConfig>               srv_reconfig;
   dynamic_reconfigure::Server<proxemics::ProxemicsControllerConfig>::CallbackType cb_reconfig;
   cb_reconfig = boost::bind(&cbReconfigure, _1, _2);
   srv_reconfig.setCallback(cb_reconfig);
