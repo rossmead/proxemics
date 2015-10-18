@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="proxemics" type="vocalics_goal_state_estimation" name="vocalics_goal_state_estimation" output="screen">
+    <param name="filepath" value="$(find proxemics)" type="str" />
+  </node>
+</launch>
+

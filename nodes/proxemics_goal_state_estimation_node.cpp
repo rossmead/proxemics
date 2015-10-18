@@ -21,8 +21,6 @@
 // ROS proxemics includes
 #include <proxemics/AudioNoise.h>
 #include <proxemics/ProxemicsGoalState.h>
-#include <proxemics/VocalicsGoalState.h>
-#include <proxemics/KinesicsGoalState.h>
 
 // PCL includes
 #include <pcl/conversions.h>
@@ -102,6 +100,10 @@ double g_curr_range_robot_to_human = 0.0;  // curr_range_robot_to_human in proxe
 double g_curr_angle_robot_to_human = 0.0;  // curr_angle_robot_to_human in proxemics_controller_node
 double g_curr_angle_human_to_robot = 0.0;  // curr_angle_human_to_robot in proxemics_controller_node
 
+// function prototypes: callbacks
+void cbAudioNoise(const proxemics::AudioNoise::ConstPtr &audio_noise);
+void cbCloud( const sensor_msgs::PointCloud2ConstPtr & input );
+
 // function prototypes: speech recognition
 void loadSpeechRecTables();
 void getTwoSpeechIndeces( float data, int index_array[], int array_length,
@@ -115,7 +117,7 @@ float getSpeechRecRate( TPerformance table[ DIRECTIVITY_NUM_PERF ][ HRTF_NUM_PER
                         double       speech_pressure,
                         double       noise );
 
-// load all the table
+// function prototypes: gesture recognition
 void loadGestureRecTables();
 int findIndexF( double data, float index_array[], int array_length );
 void getTwoGestureIndices( double data,   float index_array[], int array_length,
@@ -124,10 +126,6 @@ double getGestureRecRateDist( double dist, float probability[D_NUM_GESTURE]);
 double getGestureRecRateBeta( double dist, double beta,
                               float probability[ D_NUM_GESTURE ][ BETA_NUM_GESTURE ]);
 double getGestureRecRate( double dist, double alpha, double beta );
-
-// function prototypes: callbacks
-void cbAudioNoise(const proxemics::AudioNoise::ConstPtr &audio_noise);
-void cbCloud( const sensor_msgs::PointCloud2ConstPtr & input );
 
 // function prototypes: gesture output
 double calcLocOutA( double dist, double ang_ab, double ang_ba, double noise = 0.0 );
@@ -222,6 +220,23 @@ namespace proxemics
     double loc_in_b;   // gesture locus (multivariate PDF) input from A to B
     double spl_noise;  // auditory noise (SPL) from the environment
     double loc_noise;  // visual noise (gesture locus) from the environment
+    
+    ProxemicState()
+    {
+	  rng       = 0.0;
+	  ang_ab    = 0.0;
+	  ang_ba    = 0.0;
+	  spl_out_a = 0.0;
+	  spl_out_b = 0.0;
+	  spl_in_a  = 0.0;
+	  spl_in_b  = 0.0;
+	  loc_out_a = 0.0;
+	  loc_out_b = 0.0;
+	  loc_in_a  = 0.0;
+	  loc_in_b  = 0.0;
+	  spl_noise = 0.0;
+	  loc_noise = 0.0;
+	} // ProxemicState()
 
     void addNoise()
     {
@@ -450,8 +465,6 @@ ros::Publisher g_pub_cloud;
 
 // global variables: ROS proxemics messages
 proxemics::ProxemicsGoalState g_proxemics_goal_state;
-proxemics::VocalicsGoalState g_vocalics_goal_state;
-proxemics::KinesicsGoalState g_kinesics_goal_state;
 
 // global variables: audio noise
 double g_ambient_spl = 45.0;
@@ -478,10 +491,8 @@ int main( int argc, char** argv )
   g_pub_cloud = nh.advertise<sensor_msgs::PointCloud2>( "output", 1 );
   ros::Publisher pub_particles = nh.advertise<sensor_msgs::PointCloud2>( "particles", 1 );
 
-  // Create a ROS publisher for the proxemics, vocalics, and kinesics goal states.
+  // Create a ROS publisher for the proxemics goal state.
   ros::Publisher pub_proxemics_goal_state = nh.advertise<proxemics::ProxemicsGoalState>( "proxemics_goal_state", 1 );
-  ros::Publisher pub_vocalics_goal_state  = nh.advertise<proxemics::VocalicsGoalState>(  "vocalics_goal_state",  1 );
-  ros::Publisher pub_kinesics_goal_state  = nh.advertise<proxemics::KinesicsGoalState>(  "kinesics_goal_state",  1 );
   
   // Create a ROS subscriber for the audio noise.
   ros::Subscriber sub = nh.subscribe("audio_noise", 1, cbAudioNoise);
@@ -496,17 +507,17 @@ int main( int argc, char** argv )
   pcl_cloud.points.clear();
 
   // PDF values.
-  float x_mean    = 1.0f;
-  float x_std_dev = 1.0f;
-  float y_mean    = 0.0f;
-  float y_std_dev = 1.5f;
+  //float x_mean    = 1.0f;
+  //float x_std_dev = 1.0f;
+  //float y_mean    = 0.0f;
+  //float y_std_dev = 1.5f;
 
   // Generate the data.
   float width  = 10.0f;
   float height = 10.0f;
   float x_min  = -0.5f * width,  x_max =  0.5f * width,  x_int =  0.1f;
   float y_min  = -0.5f * height, y_max =  0.5f * height, y_int =  0.1f;
-  float z_min  =  0.0f,          z_max =  1.0f;
+  //float z_min  =  0.0f,          z_max =  1.0f;
   float p_max  =  0.0f;
   for ( float x = x_min; x <= x_max; x += x_int )
   {
@@ -516,8 +527,8 @@ int main( int argc, char** argv )
       point.x = x;
       point.y = y;
 
-      float log_p_x = log( gsl_ran_gaussian_pdf( point.x - x_mean, x_std_dev ) );
-      float log_p_y = log( gsl_ran_gaussian_pdf( point.y - y_mean, y_std_dev ) );
+      //float log_p_x = log( gsl_ran_gaussian_pdf( point.x - x_mean, x_std_dev ) );
+      //float log_p_y = log( gsl_ran_gaussian_pdf( point.y - y_mean, y_std_dev ) );
 
       float p_curr = evalParticle( point );
       if (p_curr > p_max) p_max = p_curr;
@@ -578,8 +589,6 @@ int main( int argc, char** argv )
     pub_particles.publish( ros_particles );
     
     pub_proxemics_goal_state.publish( g_proxemics_goal_state );
-    pub_vocalics_goal_state.publish( g_vocalics_goal_state );
-    pub_kinesics_goal_state.publish( g_kinesics_goal_state );
 
     loop_rate.sleep();
     ros::spinOnce();
@@ -742,18 +751,6 @@ pcl::PointCloud<pcl::PointXYZ> updateParticles( pcl::PointCloud<pcl::PointXYZ> p
   g_proxemics_goal_state.range_robot_to_human = max_state.rng;
   g_proxemics_goal_state.angle_robot_to_human = max_state.ang_ab;
   g_proxemics_goal_state.angle_human_to_robot = max_state.ang_ba;
-  
-  //g_vocalics_goal_state.sound_pressure_level = max_state.spl_out_a;
-  g_vocalics_goal_state.sound_pressure_level = calcSplOutA( 
-    g_curr_range_robot_to_human, 
-    g_curr_angle_robot_to_human, 
-    g_curr_angle_human_to_robot,
-    g_ambient_spl );
-  
-  //g_kinesics_goal_state.range_max = 0.5 * max_state.rng;
-  //g_kinesics_goal_state.angle     = max_state.ang_ab;
-  g_kinesics_goal_state.range_max = 0.5 * g_curr_range_robot_to_human;
-  g_kinesics_goal_state.angle     = 0.5 * g_curr_angle_robot_to_human;
 
   return pc_curr;
 } // updateParticles( pcl::PointCloud<pcl::PointXYZ )
@@ -814,9 +811,9 @@ double calcSplOutB( double dist, double ang_ba, double ang_ab, double noise )
   const double noise_slope      = 15.2 / ( 70.0 - 45.0 );  // Speech level increase per 1db noise
 
   const double init_spl_model      = proxemics::spl_out_b_mean;
-  const double std_dev_model       = proxemics::spl_out_b_std_dev;
+  //const double std_dev_model       = proxemics::spl_out_b_std_dev;
   const double dist_slope_model_hh = ( 66.37 - 63.63 ) / ( 5.0 - 0.5 );
-  const double dist_slope_model_hr = ( 65.78 - 75.20 ) / ( 5.0 - 0.5 );
+  //const double dist_slope_model_hr = ( 65.78 - 75.20 ) / ( 5.0 - 0.5 );
   const double dist_slope_model    = dist_slope_model_hh;
 
   double dist_effect = 0.0;
@@ -982,7 +979,7 @@ void loadModel()
   for ( int idx_direct = 0; idx_direct < DIRECT_NUM; ++idx_direct )
     for ( int idx_hrtf = 0; idx_hrtf < HRTF_NUM; ++idx_hrtf )
     {
-      fscanf( file_l, "%f", &g_model_data_l[ idx_direct ][ idx_hrtf ] );
+	  fscanf( file_l, "%f", &g_model_data_l[ idx_direct ][ idx_hrtf ] );
       fscanf( file_r, "%f", &g_model_data_r[ idx_direct ][ idx_hrtf ] );
     }
 } // loadModel()
@@ -1010,9 +1007,9 @@ void loadSpeechRecTables()
         for ( int noise = NOISE_NUM_PERF - 1; noise >= 0; --noise )
         {
           fscanf( file_l, "%f",
-                  &g_performance_tables_l[ directivity_index ][ hrtf_index ].performance[ speech_pressure ][ noise ] );
+                 &g_performance_tables_l[ directivity_index ][ hrtf_index ].performance[ speech_pressure ][ noise ] );
           fscanf( file_r, "%f",
-                  &g_performance_tables_r[ directivity_index ][ hrtf_index ].performance[ speech_pressure ][ noise ] );
+                 &g_performance_tables_r[ directivity_index ][ hrtf_index ].performance[ speech_pressure ][ noise ] );
         }
       fclose( file_l );
       fclose( file_r );
@@ -1126,7 +1123,7 @@ float getSpeechRecRate( TPerformance table[ DIRECTIVITY_NUM_PERF ][ HRTF_NUM_PER
   return bilinearInterpolation( d11, d12, d21, d22, a, b );
 } // getSpeechRecRate( TPerformance[][], double, double, double, double )
 
-// load all the table
+// load all the tables
 void loadGestureRecTables()
 {
   std::string filepath_probability_folder_gesture = g_filepath + PROBABILITY_FOLDER_GESTURE;
