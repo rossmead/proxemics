@@ -26,8 +26,8 @@ std::string g_pub_cmd_vel_name = "/robot/cmd_vel";
 
 // global variables: proxemics goal state
 double g_goal_range_robot_to_human = 1.5;
-double g_goal_angle_robot_to_human = 0.0 * M_PI / 180.0;
-double g_goal_angle_human_to_robot = 0.0 * M_PI / 180.0;
+double g_goal_angle_robot_to_human = angles::from_degrees(0.0);
+double g_goal_angle_human_to_robot = angles::from_degrees(0.0);
 
 // global variables: min/max speeds
 double g_min_speed_lin_x = 0.01;
@@ -37,10 +37,13 @@ double g_max_speed_lin_y = 1.5;
 double g_min_speed_ang_z = angles::from_degrees(1.0);
 double g_max_speed_ang_z = angles::from_degrees(180.0);
 
-// global variables: linear/angular gains
+// global variables: linear/angular proportional-derivative (PD) gains
 double g_gain_p_lin_x   = 1.0;
 double g_gain_p_lin_y   = 1.0;
 double g_gain_p_ang_z   = 1.0;
+double g_gain_d_lin_x   = 0.0;
+double g_gain_d_lin_y   = 0.0;
+double g_gain_d_ang_z   = 0.0;
 
 // callback function prototypes
 void cbProxemicsGoalState(const proxemics::ProxemicsGoalState::ConstPtr &proxemics_goal_state);
@@ -61,18 +64,25 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
 
   // initialize parameters
-  nh.setParam("goal_range_robot_to_human", g_goal_range_robot_to_human);
-  nh.setParam("goal_angle_robot_to_human", g_goal_angle_robot_to_human);
-  nh.setParam("goal_angle_human_to_robot", g_goal_angle_human_to_robot);
-  nh.setParam("min_speed_lin_x", g_min_speed_lin_x);
-  nh.setParam("max_speed_lin_x", g_max_speed_lin_x);
-  nh.setParam("min_speed_lin_y", g_min_speed_lin_y);
-  nh.setParam("max_speed_lin_y", g_max_speed_lin_y);
-  nh.setParam("min_speed_ang_z", g_min_speed_ang_z);
-  nh.setParam("max_speed_ang_z", g_max_speed_ang_z);
-  nh.setParam("gain_p_lin_x", g_gain_p_lin_x);
-  nh.setParam("gain_p_lin_y", g_gain_p_lin_y);
-  nh.setParam("gain_p_ang_z", g_gain_p_ang_z);
+  nh.param<std::string>("robot_frame_id", g_robot_frame_id,            "/robot/base_link");
+  nh.param<std::string>("human_frame_id", g_human_frame_id,            "/human/base_link");
+  nh.param("goal_range_robot_to_human",   g_goal_range_robot_to_human, 1.5);
+  nh.param("goal_angle_robot_to_human",   g_goal_angle_robot_to_human, 0.0);
+  nh.param("goal_angle_human_to_robot",   g_goal_angle_human_to_robot, 0.0);
+  nh.param("min_speed_lin_x",             g_min_speed_lin_x,           0.0);
+  nh.param("max_speed_lin_x",             g_max_speed_lin_x,           1.0);
+  nh.param("min_speed_lin_y",             g_min_speed_lin_y,           0.0);
+  nh.param("max_speed_lin_y",             g_max_speed_lin_y,           1.0);
+  nh.param("min_speed_ang_z",             g_min_speed_ang_z,           0.0);  // note: parameter in degrees, but variable in radians!
+  nh.param("max_speed_ang_z",             g_max_speed_ang_z,          90.0);  // note: parameter in degrees, but variable in radians!
+  nh.param("gain_p_lin_x",                g_gain_p_lin_x,              1.0);
+  nh.param("gain_p_lin_y",                g_gain_p_lin_y,              1.0);
+  nh.param("gain_p_ang_z",                g_gain_p_ang_z,              1.0);
+  nh.param("gain_d_lin_x",                g_gain_d_lin_x,              0.0);
+  nh.param("gain_d_lin_y",                g_gain_d_lin_y,              0.0);
+  nh.param("gain_d_ang_z",                g_gain_d_ang_z,              0.0);
+  g_min_speed_ang_z = angles::from_degrees(g_min_speed_ang_z);
+  g_max_speed_ang_z = angles::from_degrees(g_max_speed_ang_z);
 
   // initialize dynamic reconfigure parameter server
   dynamic_reconfigure::Server<proxemics::ProxemicsControllerConfig> srv_reconfig;
@@ -95,9 +105,15 @@ int main(int argc, char** argv)
   double curr_range_robot_to_human = 0.0;
   double curr_angle_robot_to_human = 0.0;
   double curr_angle_human_to_robot = 0.0;
-  double vel_lin_x = 0.0;
-  double vel_lin_y = 0.0;
-  double vel_ang_z = 0.0;
+  double curr_err_lin_x            = 0.0;
+  double curr_err_lin_y            = 0.0;
+  double curr_err_ang_z            = 0.0;
+  double prev_err_lin_x            = curr_err_lin_x;
+  double prev_err_lin_y            = curr_err_lin_y;
+  double prev_err_ang_z            = curr_err_ang_z;
+  double vel_lin_x                 = 0.0;
+  double vel_lin_y                 = 0.0;
+  double vel_ang_z                 = 0.0;
 
   while (ros::ok())
   {
@@ -116,19 +132,24 @@ int main(int argc, char** argv)
         curr_range_robot_to_human = getDistance(tf_robot_to_human.getOrigin().x(), tf_robot_to_human.getOrigin().y());
         curr_angle_robot_to_human = getAngle(tf_robot_to_human.getOrigin().x(), tf_robot_to_human.getOrigin().y());
         curr_angle_human_to_robot = getAngle(tf_human_to_robot.getOrigin().x(), tf_human_to_robot.getOrigin().y());
+        
+        // derivative control
+        prev_err_lin_x = curr_err_lin_x;
+        prev_err_lin_y = curr_err_lin_y;
+        prev_err_ang_z = curr_err_ang_z;
 
         // proportional control: velocity(error) = gain * error
         // - note: based on control equations in Mead & Mataric (HRI 2012)
-        vel_lin_x  = cos(curr_angle_robot_to_human) * ((curr_range_robot_to_human - g_goal_range_robot_to_human) * cos(curr_angle_robot_to_human - g_goal_angle_robot_to_human))
-                   - sin(curr_angle_robot_to_human) * sin(curr_angle_human_to_robot - g_goal_angle_human_to_robot);
-        vel_lin_y  = sin(curr_angle_robot_to_human) * ((curr_range_robot_to_human - g_goal_range_robot_to_human) * cos(curr_angle_robot_to_human - g_goal_angle_robot_to_human))
-                   + cos(curr_angle_robot_to_human) * sin(curr_angle_human_to_robot - g_goal_angle_human_to_robot);
-        vel_ang_z  = curr_angle_robot_to_human - g_goal_angle_robot_to_human;  // note: the curr and goal angles are reversed from the paper!
+        curr_err_lin_x = cos(curr_angle_robot_to_human) * ((curr_range_robot_to_human - g_goal_range_robot_to_human) * cos(curr_angle_robot_to_human - g_goal_angle_robot_to_human))
+                       - sin(curr_angle_robot_to_human) * sin(curr_angle_human_to_robot - g_goal_angle_human_to_robot);
+        curr_err_lin_y = sin(curr_angle_robot_to_human) * ((curr_range_robot_to_human - g_goal_range_robot_to_human) * cos(curr_angle_robot_to_human - g_goal_angle_robot_to_human))
+                       + cos(curr_angle_robot_to_human) * sin(curr_angle_human_to_robot - g_goal_angle_human_to_robot);
+        curr_err_ang_z = curr_angle_robot_to_human - g_goal_angle_robot_to_human;  // note: the curr and goal angles are reversed from the paper!
         
         // scale velocities by gains
-        vel_lin_x *= g_gain_p_lin_x;
-        vel_lin_y *= g_gain_p_lin_y;
-        vel_ang_z *= g_gain_p_ang_z;
+        vel_lin_x = g_gain_p_lin_x * curr_err_lin_x + g_gain_d_lin_x * (curr_err_lin_x - prev_err_lin_x);
+        vel_lin_y = g_gain_p_lin_y * curr_err_lin_y + g_gain_d_lin_y * (curr_err_lin_y - prev_err_lin_y);
+        vel_ang_z = g_gain_p_ang_z * curr_err_ang_z + g_gain_d_ang_z * (curr_err_ang_z - prev_err_ang_z);
         
         // clip velocities
         clip(vel_lin_x, g_min_speed_lin_x, g_max_speed_lin_x);
@@ -189,10 +210,15 @@ void cbReconfigure(proxemics::ProxemicsControllerConfig &config, uint32_t level)
   g_min_speed_ang_z = angles::from_degrees(config.min_speed_ang_z);
   g_max_speed_ang_z = angles::from_degrees(config.max_speed_ang_z);
   
-  // set linear/angular gain variables
+  // set linear/angular proportional (P) gain variables
   g_gain_p_lin_x = config.gain_p_lin_x;
   g_gain_p_lin_y = config.gain_p_lin_y;
   g_gain_p_ang_z = config.gain_p_ang_z;
+  
+  // set linear/angular derivative (d) gain variables
+  g_gain_d_lin_x = config.gain_d_lin_x;
+  g_gain_d_lin_y = config.gain_d_lin_y;
+  g_gain_d_ang_z = config.gain_d_ang_z;
 } // cbReconfigure(proxemics::ProxemicsControllerConfig &, uint32_t)
 
 double getDistance(double target_x, double target_y, double origin_x, double origin_y)
@@ -212,5 +238,8 @@ double sign(double x)
 
 double clip(double x, const double min_x, const double max_x)
 {
-  return ((fabs(x) < min_x) ? 0.0 : sign(x) * max_x);
+  if (fabs(x) < min_x) return x = 0.0;  // note: this is treated more as a threshold than a lower clip!
+  if (fabs(x) > max_x) return sign(x) * max_x;
+  return x;
+  //return ((fabs(x) < min_x) ? 0.0 : sign(x) * max_x);
 } // clip(double, const double, const double)
