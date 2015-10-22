@@ -1,6 +1,10 @@
 <launch>
   <param name="use_sim_time" value="true" type="bool"/>
-  <node pkg="stage_ros" type="stageros" name="world" args="$(find proxemics)/worlds/empty.world">
+
+  <!--The argument "-g" means that no GUI will run.-->
+  <node pkg="stage_ros" type="stageros" name="world" args="-g $(find proxemics)/worlds/empty.world">
+
+    <!--Remapping for Ava command velocity-->
     <remap from="/robot_0/cmd_vel" to="/robot/cmd_vel"/>
     <remap from="/robot_1/cmd_vel" to="/human/cmd_vel"/>
   </node>
