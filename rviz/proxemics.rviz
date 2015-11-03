@@ -6,9 +6,10 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /TF1
         - /TF1/Frames1
-      Splitter Ratio: 0.5
-    Tree Height: 1295
+      Splitter Ratio: 0.836364
+    Tree Height: 1341
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -27,7 +28,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2 (sampled)
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -54,23 +55,87 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        ava/base_link:
+          Value: true
+        bandit/base_link:
+          Value: true
+        base_link:
+          Value: true
+        closest_person/base_link:
+          Value: true
         human/base_link:
+          Value: true
+        kinect:
+          Value: true
+        kinect_client/skeleton5/ankle_left:
+          Value: true
+        kinect_client/skeleton5/ankle_right:
+          Value: true
+        kinect_client/skeleton5/base_link:
+          Value: true
+        kinect_client/skeleton5/elbow_left:
+          Value: true
+        kinect_client/skeleton5/elbow_right:
+          Value: true
+        kinect_client/skeleton5/foot_left:
+          Value: true
+        kinect_client/skeleton5/foot_right:
+          Value: true
+        kinect_client/skeleton5/hand_left:
+          Value: true
+        kinect_client/skeleton5/hand_right:
+          Value: true
+        kinect_client/skeleton5/handtip_left:
+          Value: true
+        kinect_client/skeleton5/handtip_right:
+          Value: true
+        kinect_client/skeleton5/head:
+          Value: true
+        kinect_client/skeleton5/hip_left:
+          Value: true
+        kinect_client/skeleton5/hip_right:
+          Value: true
+        kinect_client/skeleton5/knee_left:
+          Value: true
+        kinect_client/skeleton5/knee_right:
+          Value: true
+        kinect_client/skeleton5/neck:
+          Value: true
+        kinect_client/skeleton5/shoulder_left:
+          Value: true
+        kinect_client/skeleton5/shoulder_right:
+          Value: true
+        kinect_client/skeleton5/spine_base:
+          Value: true
+        kinect_client/skeleton5/spine_mid:
+          Value: true
+        kinect_client/skeleton5/spine_shoulder:
+          Value: true
+        kinect_client/skeleton5/thumb_left:
+          Value: true
+        kinect_client/skeleton5/thumb_right:
+          Value: true
+        kinect_client/skeleton5/wrist_left:
+          Value: true
+        kinect_client/skeleton5/wrist_right:
+          Value: true
+        kinect_depth_frame:
           Value: true
         map:
           Value: true
+        navigation/dynamic_obstacles/0:
+          Value: true
+        odom:
+          Value: true
         robot/base_link:
           Value: true
-        robot_0/base_footprint:
-          Value: false
-        robot_0/base_link:
-          Value: false
-        robot_0/odom:
+        speaker:
           Value: true
-        robot_1/base_footprint:
-          Value: false
-        robot_1/base_link:
-          Value: false
-        robot_1/odom:
+        speaker/left:
+          Value: true
+        speaker/right:
+          Value: true
+        world:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -79,16 +144,78 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          robot_0/odom:
-            robot_0/base_footprint:
-              robot_0/base_link:
+          odom:
+            base_link:
+              ava/base_link:
+                bandit/base_link:
+                  {}
+                kinect_depth_frame:
+                  kinect:
+                    kinect_client/skeleton5/ankle_left:
+                      {}
+                    kinect_client/skeleton5/ankle_right:
+                      {}
+                    kinect_client/skeleton5/elbow_left:
+                      {}
+                    kinect_client/skeleton5/elbow_right:
+                      {}
+                    kinect_client/skeleton5/foot_left:
+                      {}
+                    kinect_client/skeleton5/foot_right:
+                      {}
+                    kinect_client/skeleton5/hand_left:
+                      {}
+                    kinect_client/skeleton5/hand_right:
+                      {}
+                    kinect_client/skeleton5/handtip_left:
+                      {}
+                    kinect_client/skeleton5/handtip_right:
+                      {}
+                    kinect_client/skeleton5/head:
+                      {}
+                    kinect_client/skeleton5/hip_left:
+                      {}
+                    kinect_client/skeleton5/hip_right:
+                      {}
+                    kinect_client/skeleton5/knee_left:
+                      {}
+                    kinect_client/skeleton5/knee_right:
+                      {}
+                    kinect_client/skeleton5/neck:
+                      {}
+                    kinect_client/skeleton5/shoulder_left:
+                      {}
+                    kinect_client/skeleton5/shoulder_right:
+                      {}
+                    kinect_client/skeleton5/spine_base:
+                      {}
+                    kinect_client/skeleton5/spine_mid:
+                      {}
+                    kinect_client/skeleton5/spine_shoulder:
+                      {}
+                    kinect_client/skeleton5/thumb_left:
+                      {}
+                    kinect_client/skeleton5/thumb_right:
+                      {}
+                    kinect_client/skeleton5/wrist_left:
+                      {}
+                    kinect_client/skeleton5/wrist_right:
+                      {}
                 robot/base_link:
                   {}
-          robot_1/odom:
-            robot_1/base_footprint:
-              robot_1/base_link:
+                speaker:
+                  speaker/left:
+                    {}
+                  speaker/right:
+                    {}
+            navigation/dynamic_obstacles/0:
+              {}
+            world:
+              closest_person/base_link:
                 human/base_link:
                   {}
+              kinect_client/skeleton5/base_link:
+                {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -152,7 +279,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: map
+    Fixed Frame: world
     Frame Rate: 30
   Name: root
   Tools:
@@ -173,7 +300,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 6.33799
+      Distance: 7.09855
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -185,18 +312,18 @@ Visualization Manager:
         Z: 0
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.335398
+      Pitch: 0.325398
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.4854
+      Yaw: 0.360402
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1522
+  Height: 1568
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd000000040000000000000234000005a7fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006800fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000005a7000000e600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c0000026100000001000001130000055dfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000280000055d000000be00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000079600000044fc0100000002fb0000000800540069006d00650000000000000007960000038800fffffffb0000000800540069006d006501000000000000045000000000000000000000055c000005a700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000002dd000005d5fc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000006800fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c0061007900730100000028000005d5000000e600fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c0000026100000001000001130000055dfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a0056006900650077007300000000280000055d000000be00fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000079600000044fc0100000002fb0000000800540069006d00650000000000000007960000038800fffffffb0000000800540069006d00650100000000000004500000000000000000000004a9000005d500000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -205,6 +332,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1942
-  X: 40
-  Y: 15
+  Width: 1932
+  X: 47
+  Y: 14

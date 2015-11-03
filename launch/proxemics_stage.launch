@@ -2,7 +2,8 @@
   <param name="use_sim_time" value="true" type="bool"/>
 
   <!--The argument "-g" means that no GUI will run.-->
-  <node pkg="stage_ros" type="stageros" name="world" args="-g $(find proxemics)/worlds/empty.world">
+  <!--<node pkg="stage_ros" type="stageros" name="world" args="-g $(find proxemics)/worlds/empty.world">-->
+  <node pkg="stage_ros" type="stageros" name="world" args="$(find proxemics)/worlds/empty.world">
 
     <!--Remapping for Ava command velocity-->
     <remap from="/robot_0/cmd_vel" to="/robot/cmd_vel"/>
@@ -15,6 +16,7 @@
   <node pkg="tf" type="static_transform_publisher" name="human_odom" args="-1 0 0 0 0 0 /map /robot_1/odom 100"/>
 
   # TF static transforms (proxemics)
+  <node pkg="tf" type="static_transform_publisher" name="map_to_world" args="0 0 0 0 0 0 /map /world 100"/>
   <node pkg="tf" type="static_transform_publisher" name="robot_base_link" args="0 0 0 0 0 0 /robot_0/base_link /robot/base_link 100"/>
   <node pkg="tf" type="static_transform_publisher" name="human_base_link" args="0 0 0 0 0 0 /robot_1/base_link /human/base_link 100"/>
 </launch>
