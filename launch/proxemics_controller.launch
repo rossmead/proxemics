@@ -15,6 +15,9 @@
     <param name="max_accel_lin_x"           value="1.0"   type="double" />
     <param name="max_accel_lin_y"           value="1.0"   type="double" />
     <param name="max_accel_ang_z"           value="180.0" type="double" />
+    <param name="max_jerk_lin_x"            value="1.0"   type="double" />
+    <param name="max_jerk_lin_y"            value="1.0"   type="double" />
+    <param name="max_jerk_ang_z"            value="180.0" type="double" />
     <param name="gain_p_lin_x"              value="1.0"   type="double" />
     <param name="gain_p_lin_y"              value="1.0"   type="double" />
     <param name="gain_p_ang_z"              value="3.0"   type="double" />

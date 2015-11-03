@@ -43,6 +43,11 @@ double g_max_accel_lin_x = 0.1;
 double g_max_accel_lin_y = 0.1;
 double g_max_accel_ang_z = angles::from_degrees(10.0);
 
+// global variables: max jerks
+double g_max_jerk_lin_x = 0.1;
+double g_max_jerk_lin_y = 0.1;
+double g_max_jerk_ang_z = angles::from_degrees(10.0);
+
 // global variables: linear/angular proportional-derivative (PD) gains
 double g_gain_p_lin_x = 1.0;
 double g_gain_p_lin_y = 1.0;
@@ -88,6 +93,9 @@ int main(int argc, char** argv)
   nh.param("/proxemics_controller/max_accel_lin_x",             g_max_accel_lin_x,           0.1);
   nh.param("/proxemics_controller/max_accel_lin_y",             g_max_accel_lin_y,           0.1);
   nh.param("/proxemics_controller/max_accel_ang_z",             g_max_accel_ang_z,          10.0);  // note: parameter in degrees, but variable in radians!
+  nh.param("/proxemics_controller/max_jerk_lin_x",              g_max_jerk_lin_x,            0.1);
+  nh.param("/proxemics_controller/max_jerk_lin_y",              g_max_jerk_lin_y,            0.1);
+  nh.param("/proxemics_controller/max_jerk_ang_z",              g_max_jerk_ang_z,           10.0);  // note: parameter in degrees, but variable in radians!
   nh.param("/proxemics_controller/gain_p_lin_x",                g_gain_p_lin_x,              1.0);
   nh.param("/proxemics_controller/gain_p_lin_y",                g_gain_p_lin_y,              1.0);
   nh.param("/proxemics_controller/gain_p_ang_z",                g_gain_p_ang_z,              1.0);
@@ -97,6 +105,7 @@ int main(int argc, char** argv)
   g_min_speed_ang_z = angles::from_degrees(g_min_speed_ang_z);
   g_max_speed_ang_z = angles::from_degrees(g_max_speed_ang_z);
   g_max_accel_ang_z = angles::from_degrees(g_max_accel_ang_z);
+  g_max_jerk_ang_z  = angles::from_degrees(g_max_jerk_ang_z);
 
   // initialize dynamic reconfigure parameter server
   dynamic_reconfigure::Server<proxemics::ProxemicsControllerConfig>               srv_reconfig;
@@ -125,20 +134,27 @@ int main(int argc, char** argv)
   double prev_err_lin_x            = curr_err_lin_x;
   double prev_err_lin_y            = curr_err_lin_y;
   double prev_err_ang_z            = curr_err_ang_z;
-  double curr_vel_lin_x                 = 0.0;
-  double curr_vel_lin_y                 = 0.0;
-  double curr_vel_ang_z                 = 0.0;
-  double prev_vel_lin_x                 = curr_vel_lin_x;
-  double prev_vel_lin_y                 = curr_vel_lin_y;
-  double prev_vel_ang_z                 = curr_vel_ang_z;
-  double accel_lin_x                    = curr_vel_lin_x - prev_vel_lin_x;
-  double accel_lin_y                    = curr_vel_lin_y - prev_vel_lin_y;
-  double accel_ang_z                    = curr_vel_ang_z - prev_vel_ang_z;
+  double curr_vel_lin_x            = 0.0;
+  double curr_vel_lin_y            = 0.0;
+  double curr_vel_ang_z            = 0.0;
+  double prev_vel_lin_x            = curr_vel_lin_x;
+  double prev_vel_lin_y            = curr_vel_lin_y;
+  double prev_vel_ang_z            = curr_vel_ang_z;
+  double curr_accel_lin_x          = curr_vel_lin_x - prev_vel_lin_x;
+  double curr_accel_lin_y          = curr_vel_lin_y - prev_vel_lin_y;
+  double curr_accel_ang_z          = curr_vel_ang_z - prev_vel_ang_z;
+  double prev_accel_lin_x          = curr_accel_lin_x;
+  double prev_accel_lin_y          = curr_accel_lin_y;
+  double prev_accel_ang_z          = curr_accel_ang_z;
+  double jerk_lin_x                = curr_vel_lin_x - prev_vel_lin_x;
+  double jerk_lin_y                = curr_vel_lin_y - prev_vel_lin_y;
+  double jerk_ang_z                = curr_vel_ang_z - prev_vel_ang_z;
 
-  // 
+  //  
   ros::Time     t_curr      = ros::Time::now();
   ros::Time     t_prev      = t_curr;
   ros::Duration dur_delta_t = t_curr - t_prev;
+  double        delta_t     = dur_delta_t.toSec();
 
   while (ros::ok())
   {
@@ -150,6 +166,7 @@ int main(int argc, char** argv)
     t_prev      = t_curr;
     t_curr      = ros::Time::now();
     dur_delta_t = t_curr - t_prev;
+    delta_t     = dur_delta_t.toSec();
     
     try // get human position
     {
@@ -197,14 +214,14 @@ int main(int argc, char** argv)
           curr_err_ang_z = curr_angle_robot_to_human - g_goal_angle_robot_to_human;  // note: the curr and goal angles are reversed from the paper!
         
           // scale velocities by gains
-          curr_vel_lin_x = g_gain_p_lin_x * curr_err_lin_x + g_gain_d_lin_x * (curr_err_lin_x - prev_err_lin_x);
-          curr_vel_lin_y = g_gain_p_lin_y * curr_err_lin_y + g_gain_d_lin_y * (curr_err_lin_y - prev_err_lin_y);
-          curr_vel_ang_z = g_gain_p_ang_z * curr_err_ang_z + g_gain_d_ang_z * (curr_err_ang_z - prev_err_ang_z);
+          curr_vel_lin_x = g_gain_p_lin_x * curr_err_lin_x + g_gain_d_lin_x * (curr_err_lin_x - prev_err_lin_x) / delta_t;
+          curr_vel_lin_y = g_gain_p_lin_y * curr_err_lin_y + g_gain_d_lin_y * (curr_err_lin_y - prev_err_lin_y) / delta_t;
+          curr_vel_ang_z = g_gain_p_ang_z * curr_err_ang_z + g_gain_d_ang_z * (curr_err_ang_z - prev_err_ang_z) / delta_t;
         
           // clip velocities
-          clip(curr_vel_lin_x, g_min_speed_lin_x, g_max_speed_lin_x);
-          clip(curr_vel_lin_y, g_min_speed_lin_y, g_max_speed_lin_y);
-          clip(curr_vel_ang_z, g_min_speed_ang_z, g_max_speed_ang_z);
+          curr_vel_lin_x = clip(curr_vel_lin_x, g_min_speed_lin_x, g_max_speed_lin_x);
+          curr_vel_lin_y = clip(curr_vel_lin_y, g_min_speed_lin_y, g_max_speed_lin_y);
+          curr_vel_ang_z = clip(curr_vel_ang_z, g_min_speed_ang_z, g_max_speed_ang_z);
         }
         else
         {
@@ -219,19 +236,46 @@ int main(int argc, char** argv)
     }
 
     // clip accelerations
-    double delta_t = dur_delta_t.toSec();
-    accel_lin_x    = curr_vel_lin_x - prev_vel_lin_x; 
-    accel_lin_y    = curr_vel_lin_y - prev_vel_lin_y; 
-    accel_ang_z    = curr_vel_ang_z - prev_vel_ang_z; 
-    if (fabs(accel_lin_x) > g_max_accel_lin_x * delta_t) curr_vel_lin_x = prev_vel_lin_x + sign(accel_lin_x) * g_max_accel_lin_x * delta_t;
-    if (fabs(accel_lin_y) > g_max_accel_lin_y * delta_t) curr_vel_lin_y = prev_vel_lin_y + sign(accel_lin_y) * g_max_accel_lin_y * delta_t;
-    if (fabs(accel_ang_z) > g_max_accel_ang_z * delta_t) curr_vel_ang_z = prev_vel_ang_z + sign(accel_ang_z) * g_max_accel_ang_z * delta_t;
+    prev_accel_lin_x = curr_accel_lin_x;
+    prev_accel_lin_y = curr_accel_lin_y;
+    prev_accel_ang_z = curr_accel_ang_z;
+    curr_accel_lin_x = (curr_vel_lin_x - prev_vel_lin_x) / delta_t;
+    curr_accel_lin_y = (curr_vel_lin_y - prev_vel_lin_y) / delta_t;
+    curr_accel_ang_z = (curr_vel_ang_z - prev_vel_ang_z) / delta_t;
+    if (fabs(curr_accel_lin_x) > g_max_accel_lin_x) curr_accel_lin_x = sign(curr_accel_lin_x) * g_max_accel_lin_x;
+    if (fabs(curr_accel_lin_y) > g_max_accel_lin_y) curr_accel_lin_y = sign(curr_accel_lin_y) * g_max_accel_lin_y;
+    if (fabs(curr_accel_ang_z) > g_max_accel_ang_z) curr_accel_ang_z = sign(curr_accel_ang_z) * g_max_accel_ang_z;
+
+    // clip jerks
+    jerk_lin_x = (curr_accel_lin_x - prev_accel_lin_x) / delta_t;
+    jerk_lin_y = (curr_accel_lin_y - prev_accel_lin_y) / delta_t;
+    jerk_ang_z = (curr_accel_ang_z - prev_accel_ang_z) / delta_t;
+    if (fabs(jerk_lin_x) > g_max_jerk_lin_x)
+    {
+      jerk_lin_x       = sign(jerk_lin_x) * g_max_jerk_lin_x;
+      curr_accel_lin_x = prev_accel_lin_x + jerk_lin_x * delta_t;
+    }
+    if (fabs(jerk_lin_y) > g_max_jerk_lin_y)
+    {
+      jerk_lin_y       = sign(jerk_lin_y) * g_max_jerk_lin_y;
+      curr_accel_lin_y = prev_accel_lin_y + jerk_lin_y * delta_t;
+    }
+    if (fabs(jerk_ang_z) > g_max_jerk_ang_z)
+    {
+      jerk_ang_z       = sign(jerk_ang_z) * g_max_jerk_ang_z;
+      curr_accel_ang_z = prev_accel_ang_z + jerk_ang_z * delta_t;
+    }
+
+    // clip velocities
+    curr_vel_lin_x = clip(prev_vel_lin_x + curr_accel_lin_x * delta_t, g_min_speed_lin_x, g_max_speed_lin_x);
+    curr_vel_lin_y = clip(prev_vel_lin_y + curr_accel_lin_y * delta_t, g_min_speed_lin_y, g_max_speed_lin_y);
+    curr_vel_ang_z = clip(prev_vel_ang_z + curr_accel_ang_z * delta_t, g_min_speed_ang_z, g_max_speed_ang_z);
 
     // print proxemics goal state
-    ROS_INFO("goal_state = [%.2f, %.2f, %.2f]",
-             g_goal_range_robot_to_human,
-             g_goal_angle_robot_to_human,
-             g_goal_angle_human_to_robot);
+    //ROS_INFO("goal_state = [%.2f, %.2f, %.2f]",
+    //         g_goal_range_robot_to_human,
+    //         g_goal_angle_robot_to_human,
+    //         g_goal_angle_human_to_robot);
 
     // print linear (vel_lin_x and vel_lin_y) and angular (vel_ang_z) velocities
     //ROS_INFO("vel = [%.2f, %.2f, %.2f]", vel_lin_x, vel_lin_y, vel_ang_z);
@@ -282,6 +326,11 @@ void cbReconfigure(proxemics::ProxemicsControllerConfig &config, uint32_t level)
   g_max_accel_lin_x = config.max_accel_lin_x;
   g_max_accel_lin_y = config.max_accel_lin_y;
   g_max_accel_ang_z = angles::from_degrees(config.max_accel_ang_z);
+  
+  // set max jerk variables
+  g_max_jerk_lin_x = config.max_jerk_lin_x;
+  g_max_jerk_lin_y = config.max_jerk_lin_y;
+  g_max_jerk_ang_z = angles::from_degrees(config.max_jerk_ang_z);
   
   // set linear/angular proportional (P) gain variables
   g_gain_p_lin_x = config.gain_p_lin_x;
