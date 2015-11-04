@@ -11,30 +11,30 @@
     <param name="goal_angle_human_to_robot" value="0.0"   type="double" />
     <param name="enable_speed_limits"       value="true"  type="bool" />
     <param name="min_speed_lin_x"           value="0.0"   type="double" />
-    <param name="max_speed_lin_x"           value="1.5"   type="double" />
+    <param name="max_speed_lin_x"           value="1.2"   type="double" />
     <param name="min_speed_lin_y"           value="0.0"   type="double" />
-    <param name="max_speed_lin_y"           value="1.5"   type="double" />
+    <param name="max_speed_lin_y"           value="1.2"   type="double" />
     <param name="min_speed_ang_z"           value="0.0"   type="double" />
     <param name="max_speed_ang_z"           value="360.0" type="double" />
-    <param name="enable_accel_limits"       value="false"  type="bool" />
-    <param name="max_accel_lin_x"           value="1.0"   type="double" />
-    <param name="max_accel_lin_y"           value="1.0"   type="double" />
+    <param name="enable_accel_limits"       value="true"  type="bool" />
+    <param name="max_accel_lin_x"           value="0.2"   type="double" />
+    <param name="max_accel_lin_y"           value="0.2"   type="double" />
     <param name="max_accel_ang_z"           value="180.0" type="double" />
-    <param name="enable_jerk_limits"        value="false"  type="bool" />
-    <param name="max_jerk_lin_x"            value="1.0"   type="double" />
-    <param name="max_jerk_lin_y"            value="1.0"   type="double" />
-    <param name="max_jerk_ang_z"            value="180.0" type="double" />
+    <param name="enable_jerk_limits"        value="true"  type="bool" />
+    <param name="max_jerk_lin_x"            value="40.0"  type="double" />
+    <param name="max_jerk_lin_y"            value="40.0"  type="double" />
+    <param name="max_jerk_ang_z"            value="9000.0" type="double" />
     <param name="enable_p_control"          value="true"  type="bool" />
-    <param name="gain_p_lin_x"              value="1.0"   type="double" />
-    <param name="gain_p_lin_y"              value="1.0"   type="double" />
+    <param name="gain_p_lin_x"              value="2.0"   type="double" />
+    <param name="gain_p_lin_y"              value="2.0"   type="double" />
     <param name="gain_p_ang_z"              value="3.0"   type="double" />
-    <param name="enable_d_control"          value="false"  type="bool" />
-    <param name="gain_d_lin_x"              value="0.0"   type="double" />
-    <param name="gain_d_lin_y"              value="0.0"   type="double" />
-    <param name="gain_d_ang_z"              value="0.5"   type="double" />
+    <param name="enable_d_control"          value="true"  type="bool" />
+    <param name="gain_d_lin_x"              value="0.5"   type="double" />
+    <param name="gain_d_lin_y"              value="0.5"   type="double" />
+    <param name="gain_d_ang_z"              value="1.0"   type="double" />
 
     <!--Remapping for Ava command velocity-->
-    <!--<remap from="/robot/cmd_vel" to="/ava/cmd_vel"/>-->
+    <remap from="/robot/cmd_vel" to="/ava/cmd_vel"/>
   </node>
 
   <!--<node pkg="proxemics" type="proxemics_goal_state_estimation" name="proxemics_goal_state_estimation"/>-->

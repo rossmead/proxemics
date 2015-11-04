@@ -184,8 +184,8 @@ int main(int argc, char** argv)
     dur_delta_t = t_curr - t_prev;
     delta_t     = dur_delta_t.toSec();
     
-    if (delta_t < 1.0 / loop_hz) delta_t = 1.0 / loop_hz;
-    ROS_INFO("delta_t = %.8f", delta_t);
+    if (delta_t < 0.000001) delta_t = 1.0 / loop_hz;
+    //ROS_INFO("delta_t = %.8f", delta_t);
     
     try // get human position
     {
