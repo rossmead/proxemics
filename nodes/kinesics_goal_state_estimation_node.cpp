@@ -109,8 +109,10 @@ int main( int argc, char** argv )
         
         //g_kinesics_goal_state.range_max = 0.5 * max_state.rng;
         //g_kinesics_goal_state.angle     = max_state.ang_ab;
+        g_kinesics_goal_state.range     = 0.3 * g_curr_range_robot_to_human;
         g_kinesics_goal_state.range_max = 0.5 * g_curr_range_robot_to_human;
         g_kinesics_goal_state.angle     = 0.5 * g_curr_angle_robot_to_human;
+        g_kinesics_goal_state.angle_max = 1.0 * g_curr_angle_robot_to_human;
       }
     }
     catch (tf::TransformException &ex)

@@ -1,0 +1,11 @@
+<launch>
+  <node pkg="proxemics" type="kinesics_controller" name="kinesics_controller" output="screen">
+    <param name="range_min"          value="0.3"  type="double" />
+    <param name="range_max"          value="0.5"  type="double" />
+    <param name="v_center_range_min" value="45.0" type="double" />
+    <param name="v_center_range_max" value="80.0" type="double" />
+    <param name="h_center_range_min" value="5.0"  type="double" />
+    <param name="h_center_range_max" value="-5.0" type="double" />
+  </node>
+</launch>
+
